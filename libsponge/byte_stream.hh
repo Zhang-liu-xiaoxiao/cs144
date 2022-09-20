@@ -2,10 +2,11 @@
 #define SPONGE_LIBSPONGE_BYTE_STREAM_HH
 
 #include <string>
+#include <vector>
 
 //! \brief An in-order byte stream.
 
-//! Bytes are written on the "input" side and read from the "output"
+//! Bytes are written on the "input" side and read_index from the "output"
 //! side.  The byte stream is finite: the writer can end the input,
 //! and then no more bytes can be written.
 class ByteStream {
@@ -16,7 +17,12 @@ class ByteStream {
     // all, but if any of your tests are taking longer than a second,
     // that's a sign that you probably want to keep exploring
     // different approaches.
-
+    size_t cap;
+    size_t readed;
+    size_t written;
+    size_t write_index;
+    bool input_end;
+    std::vector<char> buf;
     bool _error{};  //!< Flag indicating that the stream suffered an error.
 
   public:
@@ -61,7 +67,7 @@ class ByteStream {
     //! \returns `true` if the stream has suffered an error
     bool error() const { return _error; }
 
-    //! \returns the maximum amount that can currently be read from the stream
+    //! \returns the maximum amount that can currently be read_index from the stream
     size_t buffer_size() const;
 
     //! \returns `true` if the buffer is empty

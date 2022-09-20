@@ -4,6 +4,7 @@
 #include "byte_stream.hh"
 
 #include <cstdint>
+#include <deque>
 #include <string>
 
 //! \brief A class that assembles a series of excerpts from a byte stream (possibly out of order,
@@ -14,12 +15,17 @@ class StreamReassembler {
 
     ByteStream _output;  //!< The reassembled in-order byte stream
     size_t _capacity;    //!< The maximum number of bytes
+    size_t _unassembled_bytes = 0;
+    bool _is_eof = false;
+    size_t _eof_index = 0;
+    std::deque<char> _buffer;
+    std::deque<bool> _flag;
 
   public:
     //! \brief Construct a `StreamReassembler` that will store up to `capacity` bytes.
     //! \note This capacity limits both the bytes that have been reassembled,
     //! and those that have not yet been reassembled.
-    StreamReassembler(const size_t capacity);
+    [[maybe_unused]] StreamReassembler(const size_t capacity);
 
     //! \brief Receive a substring and write any newly contiguous bytes into the stream.
     //!
@@ -46,6 +52,7 @@ class StreamReassembler {
     //! \brief Is the internal state empty (other than the output stream)?
     //! \returns `true` if no substrings are waiting to be assembled
     bool empty() const;
+
 };
 
 #endif  // SPONGE_LIBSPONGE_STREAM_REASSEMBLER_HH
