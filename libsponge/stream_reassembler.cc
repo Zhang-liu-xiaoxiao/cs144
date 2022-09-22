@@ -20,7 +20,7 @@ using namespace std;
 //! contiguous substrings and writes them into the output stream in order.
 void StreamReassembler::push_substring(const string &data, const size_t index, const bool eof) {
     size_t last_unassambled = _output.bytes_written();
-    size_t unaccepted = last_unassambled + _capacity;
+    size_t unaccepted = _output.bytes_read() + _capacity;
 
     if (index > unaccepted || (index + data.length()) < last_unassambled) {
         return;
@@ -47,7 +47,8 @@ void StreamReassembler::push_substring(const string &data, const size_t index, c
         _unassembled_bytes -= write_str.length();
         _output.write(write_str);
     }
-    if (eof) {
+    // in case of eof out of window size
+    if (eof && (end_index == data.length()+index)) {
         _is_eof = true;
         _eof_index = end_index;
     }

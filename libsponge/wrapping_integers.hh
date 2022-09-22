@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <ostream>
 
-//! \brief A 32-bit integer, expressed relative to an arbitrary initial sequence number (ISN)
+//! \brief A 32-bit integer, expressed relative to an arbitrary initial sequence number (_ISN)
 //! \note This is used to express TCP sequence numbers (seqno) and acknowledgment numbers (ackno)
 class WrappingInt32 {
   private:
@@ -29,10 +29,10 @@ WrappingInt32 wrap(uint64_t n, WrappingInt32 isn);
 //! \param checkpoint A recent absolute sequence number
 //! \returns the absolute sequence number that wraps to `n` and is closest to `checkpoint`
 //!
-//! \note Each of the two streams of the TCP connection has its own ISN. One stream
-//! runs from the local TCPSender to the remote TCPReceiver and has one ISN,
+//! \note Each of the two streams of the TCP connection has its own _ISN. One stream
+//! runs from the local TCPSender to the remote TCPReceiver and has one _ISN,
 //! and the other stream runs from the remote TCPSender to the local TCPReceiver and
-//! has a different ISN.
+//! has a different _ISN.
 uint64_t unwrap(WrappingInt32 n, WrappingInt32 isn, uint64_t checkpoint);
 
 //! \name Helper functions

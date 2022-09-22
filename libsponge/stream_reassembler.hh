@@ -53,6 +53,9 @@ class StreamReassembler {
     //! \returns `true` if no substrings are waiting to be assembled
     bool empty() const;
 
+    size_t window_size() const {
+        return _output.bytes_read() + _capacity - _output.bytes_written();
+    }
 };
 
 #endif  // SPONGE_LIBSPONGE_STREAM_REASSEMBLER_HH
