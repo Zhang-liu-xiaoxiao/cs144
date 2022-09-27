@@ -1,6 +1,7 @@
 /build
 /.ccls-cache
 /cmake-build-debug/
+/cmake-build-relasan/
 /lab_handouts/
 .idea/
 /notes/

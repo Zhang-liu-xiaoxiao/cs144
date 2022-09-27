@@ -8,8 +8,27 @@
 
 #include <functional>
 #include <queue>
+#include <set>
+#include <utility>
 
 //! \brief The "sender" part of a TCP implementation.
+
+class OutStandingSegment {
+  private:
+    TCPSegment _segment;
+    size_t _send_index;
+
+  public:
+    bool operator<(const OutStandingSegment &o) const { return _send_index < o._send_index; }
+    OutStandingSegment(TCPSegment segment, size_t index) : _segment(std::move(segment)), _send_index(index) {}
+    [[nodiscard]] size_t GetIndex() const { return _send_index; }
+    [[nodiscard]] TCPSegment &GetSeg() { return _segment; }
+};
+
+struct RetransmissionTimer {
+    size_t _expire_time;
+    bool _running;
+};
 
 //! Accepts a ByteStream, divides it up into segments and sends the
 //! segments, keeps track of which segments are still in-flight,
@@ -31,6 +50,29 @@ class TCPSender {
 
     //! the (absolute) sequence number for the next byte to be sent
     uint64_t _next_seqno{0};
+
+    //! update from tick
+    size_t _logical_time = 0;
+
+    size_t _consecutive_retransmissions = 0;
+
+    std::set<OutStandingSegment> _outstanding_seg = {};
+
+    RetransmissionTimer _retrans_timer = {0, false};
+
+    size_t _window_size = 1;
+
+    size_t _push_index = 0;
+
+    size_t _largest_ackno = 0;
+
+    //    bool ack = false;           //!< ack flag
+    //    bool psh = false;           //!< push flag
+    //    bool rst = false;           //!< rst flag
+    bool _syn = true;  //!< syn flag
+    bool _fin = false;  //!< fin flag
+
+    unsigned int _retransmission_timeout;
 
   public:
     //! Initialize a TCPSender
@@ -87,6 +129,9 @@ class TCPSender {
     //! \brief relative seqno for the next byte to be sent
     WrappingInt32 next_seqno() const { return wrap(_next_seqno, _isn); }
     //!@}
+    void push_data(const std::string &read_str, bool syn, bool fin);
+    uint64_t send_size();
+    void start_timer();
 };
 
 #endif  // SPONGE_LIBSPONGE_TCP_SENDER_HH
