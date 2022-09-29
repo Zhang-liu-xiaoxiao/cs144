@@ -40,7 +40,6 @@ optional<WrappingInt32> TCPReceiver::ackno() const {
     if (!_receive_syn) {
         return nullopt;
     }
-//    size_t syn = 1;
     size_t fin = stream_out().input_ended() ? 1 : 0;
     return wrap(stream_out().bytes_written() + 1 + fin, _isn);
 }

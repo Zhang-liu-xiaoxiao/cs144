@@ -27,8 +27,6 @@ class TCPReceiver {
     //! The maximum number of bytes we'll store.
     size_t _capacity;
 
-//    TCPSTATUS _status;
-
     bool _receive_syn = false;
 
     WrappingInt32 _isn;

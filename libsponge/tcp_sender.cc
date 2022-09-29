@@ -58,8 +58,13 @@ void TCPSender::fill_window() {
         push_data(data, false, fin);
         remain -= (len + fin);
     }
+    if (_outstanding_seg.empty()) {
+        _retransmission_timeout = _initial_retransmission_timeout;
+        _consecutive_retransmissions = 0;
+    } else {
+        start_timer();
+    }
 
-    start_timer();
 }
 void TCPSender::start_timer() {
     if (!_retrans_timer._running) {
@@ -84,11 +89,11 @@ void TCPSender::push_data(const string &read_str, bool syn, bool fin) {
 //! \param ackno The remote receiver's ackno (acknowledgment number)
 //! \param window_size The remote receiver's advertised window size
 void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_size) {
-    _window_size = window_size;
     auto abs_ack = unwrap(ackno, _isn, _next_seqno);
     if (abs_ack > next_seqno_absolute()) {
         return ;
     }
+    _window_size = window_size;
     if (abs_ack > _largest_ackno) {
         //! 1.set rto to initial rto
         _retransmission_timeout = _initial_retransmission_timeout;
@@ -105,6 +110,7 @@ void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_si
         for (const auto &item : remove_vec) {
             _outstanding_seg.erase(item);
         }
+
         if (_outstanding_seg.empty()) {
             _retrans_timer._running = false;
         } else {
@@ -120,9 +126,10 @@ void TCPSender::tick(const size_t ms_since_last_tick) {
     _logical_time += ms_since_last_tick;
     if (_retrans_timer._running and _logical_time >= _retrans_timer._expire_time) {
         //! resend earliest seg
-        auto seg = *_outstanding_seg.begin();
-        //        _outstanding_seg.erase(_outstanding_seg.begin());
-        _segments_out.push(seg.GetSeg());
+        if (!_outstanding_seg.empty()) {
+            auto seg = *_outstanding_seg.begin();
+            _segments_out.push(seg.GetSeg());
+        }
 
         //! 拥塞控制
         if (_window_size > 0) {

@@ -21,6 +21,13 @@ class TCPConnection {
     //! in case the remote TCPConnection doesn't know we've received its whole stream?
     bool _linger_after_streams_finish{true};
 
+    size_t _time_since_last_segment_received{0};
+
+
+    bool _active = true;
+
+    size_t _logical_time = 0;
+
   public:
     //! \name "Input" interface for the writer
     //!@{
@@ -94,6 +101,8 @@ class TCPConnection {
     TCPConnection(const TCPConnection &other) = delete;
     TCPConnection &operator=(const TCPConnection &other) = delete;
     //!@}
+    void unclean_close(bool send_seg);
+    void push_out_all_segments();
 };
 
 #endif  // SPONGE_LIBSPONGE_TCP_FACTORED_HH
