@@ -22,8 +22,8 @@ using namespace std;
 //! \param[in] ip_address IP (what ARP calls "protocol") address of the interface
 NetworkInterface::NetworkInterface(const EthernetAddress &ethernet_address, const Address &ip_address)
     : _ethernet_address(ethernet_address), _ip_address(ip_address) {
-        cerr << "DEBUG: Network interface has Ethernet address " << to_string(_ethernet_address) << " and IP address "
-             << ip_address.ip() << "\n";
+    cerr << "DEBUG: Network interface has Ethernet address " << to_string(_ethernet_address) << " and IP address "
+         << ip_address.ip() << "\n";
 }
 
 //! \param[in] dgram the IPv4 datagram to be sent
@@ -71,9 +71,10 @@ void NetworkInterface::build_push_IP_data(const InternetDatagram &ip_data, uint3
 
 //! \param[in] frame the incoming Ethernet frame
 optional<InternetDatagram> NetworkInterface::recv_frame(const EthernetFrame &frame) {
-    if (frame.header().dst != _ethernet_address && frame.header().type != EthernetHeader::TYPE_ARP) {
+    if (frame.header().dst != ETHERNET_BROADCAST && frame.header().dst != _ethernet_address) {
         return nullopt;
     }
+    cout << "eth:" + to_string(_ethernet_address) + ",ip:" + to_string(_ip_address.ipv4_numeric()) + "receive" << frame.header().to_string() << endl;
 
     if (frame.header().type == EthernetHeader::TYPE_IPv4) {
         InternetDatagram data;
@@ -89,27 +90,7 @@ optional<InternetDatagram> NetworkInterface::recv_frame(const EthernetFrame &fra
         auto s_ip = data.sender_ip_address;
         auto s_eth = data.sender_ethernet_address;
         _ip_eth_table[s_ip] = make_pair(_logical_time, s_eth);
-        if (data.opcode == ARPMessage::OPCODE_REPLY) {
-            std::vector<uint32_t> arq_remove_vec{};
-            for (auto i : _arq_req) {
-                if (i.first == s_ip) {
-                    arq_remove_vec.push_back(i.first);
-                }
-            }
-            for (auto i : arq_remove_vec) {
-                _arq_req.erase(i);
-            }
-
-            for (auto it = _wait_ip_data.begin(); it != _wait_ip_data.end();) {
-                if (it->first == s_ip) {
-                    build_push_IP_data(it->second, it->first);
-                    _wait_ip_data.erase(it);
-                } else {
-                    it++;
-                }
-            }
-
-        } else if (data.opcode == ARPMessage::OPCODE_REQUEST && data.target_ip_address == _ip_address.ipv4_numeric()) {
+        if (data.opcode == ARPMessage::OPCODE_REQUEST && data.target_ip_address == _ip_address.ipv4_numeric()) {
             EthernetFrame reply;
             reply.header().type = EthernetHeader::TYPE_ARP;
             reply.header().src = _ethernet_address;
@@ -123,6 +104,27 @@ optional<InternetDatagram> NetworkInterface::recv_frame(const EthernetFrame &fra
             reply.payload() = msg.serialize();
             frames_out().push(reply);
         }
+        //        if (data.opcode == ARPMessage::OPCODE_REPLY) {
+        std::vector<uint32_t> arq_remove_vec{};
+        for (auto i : _arq_req) {
+            if (i.first == s_ip) {
+                arq_remove_vec.push_back(i.first);
+            }
+        }
+        for (auto i : arq_remove_vec) {
+            _arq_req.erase(i);
+        }
+
+        for (auto it = _wait_ip_data.begin(); it != _wait_ip_data.end();) {
+            if (it->first == s_ip) {
+                build_push_IP_data(it->second, it->first);
+                _wait_ip_data.erase(it);
+            } else {
+                it++;
+            }
+        }
+
+        //        }
     }
     return {};
 }
